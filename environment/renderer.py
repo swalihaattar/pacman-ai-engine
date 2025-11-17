@@ -1,4 +1,3 @@
-# environment/renderer.py
 import pygame
 from pygame import Rect
 from .game_engine import TILE_SIZE
@@ -35,25 +34,58 @@ class Renderer:
 
     def render(self, screen):
         if not self.engine.running and self.engine.game_over:
+            # Dynamically size Game Over screen (90% of current window)
+            GAMEOVER_WIDTH = int(self.width * 0.9)
+            GAMEOVER_HEIGHT = int(self.height * 0.9)
+            
+            # Create surface
+            gameover_screen = pygame.Surface((GAMEOVER_WIDTH, GAMEOVER_HEIGHT))
+            gameover_screen.fill(BLACK)
+            
+            # Base for scaling fonts
+            base = min(GAMEOVER_WIDTH, GAMEOVER_HEIGHT)
+            msg_font = pygame.font.SysFont("Arial", max(20, base // 16), bold=True)
+            score_font = pygame.font.SysFont("Arial", max(16, base // 22))
+            level_font = pygame.font.SysFont("Arial", max(14, base // 28))
+            hint_font = pygame.font.SysFont("Arial", max(12, base // 38))
 
-            screen.fill((0,0,0))
-            msg_font = pygame.font.SysFont("Arial", 48, bold=True)
-            score_font = pygame.font.SysFont("Arial", 36)
+            # Check message
+            if getattr(self.engine, 'all_levels_complete', False):
+                msg = "ALL LEVELS COMPLETE!"
+                msg_color = (255, 215, 0)
+            else:
+                msg = "LEVEL COMPLETE!" if self.engine.win else "GAME OVER"
+                msg_color = (0, 255, 0) if self.engine.win else (255, 50, 50)
 
-            msg = "YOU WIN!" if self.engine.win else "GAME OVER"
-            msg_color = (0,255,0) if self.engine.win else (255,50,50)
-
+            # Render text
             surf = msg_font.render(msg, True, msg_color)
+            level_display = self.engine.current_level_name.upper()
+            level_surf = level_font.render(f"Level: {level_display}", True, (200, 200, 200))
             score_surf = score_font.render(f"Score: {self.engine.pacman.score}", True, WHITE)
+            highscore_surf = level_font.render(f"High Score: {self.engine.get_current_highscore()}", True, (255, 215, 0))
 
-            screen.blit(surf, (self.width//2 - surf.get_width()//2, self.height//2 - 60))
-            screen.blit(score_surf, (self.width//2 - score_surf.get_width()//2, self.height//2))
+            # Hint
+            if self.engine.win and not getattr(self.engine, 'all_levels_complete', False):
+                hint_surf = hint_font.render("Press ENTER for next level | SPACE to restart", True, (200, 200, 50))
+            else:
+                hint_surf = hint_font.render("Press SPACE to restart", True, (200, 200, 50))
 
-            # Add "Press SPACE to restart" hint
-            hint_surf = self.font.render("Press SPACE to restart", True, (200,200,50))
-            screen.blit(hint_surf, (self.width//2 - hint_surf.get_width()//2, self.height//2 + 60))
+            # Proportional y-spacing
+            y_pos = GAMEOVER_HEIGHT * 0.1
+            spacing = GAMEOVER_HEIGHT * 0.12
 
+            for surf_item in [surf, level_surf, score_surf, highscore_surf, hint_surf]:
+                gameover_screen.blit(surf_item, (GAMEOVER_WIDTH//2 - surf_item.get_width()//2, int(y_pos)))
+                y_pos += spacing
+
+            # Blit centered
+            x_offset = (self.width - GAMEOVER_WIDTH) // 2
+            y_offset = (self.height - GAMEOVER_HEIGHT) // 2
+            screen.fill(BLACK)
+            screen.blit(gameover_screen, (x_offset, y_offset))
+            
             return
+
 
         # background
         screen.fill(BLACK)
@@ -246,11 +278,9 @@ class Renderer:
 
         # Draw HUD
         score_text = self.font.render(f"Score: {self.engine.pacman.score}", True, WHITE)
-        high_text = self.font.render(f"High Score: {self.engine.highscore}", True, (255,215,0))
+        level_text = self.font.render(f"Level: {self.engine.current_level_name.upper()}", True, (100,200,255))
+        high_text = self.font.render(f"High: {self.engine.get_current_highscore()}", True, (255,215,0))
 
         screen.blit(score_text, (10, self.engine.height_px + 10))
-        screen.blit(high_text, (200, self.engine.height_px + 10))
-
-
-
-
+        screen.blit(level_text, (self.width//2 - level_text.get_width()//2, self.engine.height_px + 10))
+        screen.blit(high_text, (self.width - high_text.get_width() - 10, self.engine.height_px + 10))
