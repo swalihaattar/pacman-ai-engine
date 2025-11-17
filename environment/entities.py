@@ -51,7 +51,7 @@ class Pacman(Entity):
         
         # speed control
         self.normal_move_delay = 0.25      # your current pacman speed
-        self.boost_move_delay = 0.45      # slightly faster only when chasing vuln ghosts
+        self.boost_move_delay = 0.20     # slightly faster only when chasing vuln ghosts
         self.move_delay = self.normal_move_delay
 
         self.time_since_move = 0
@@ -78,7 +78,9 @@ class Ghost(Entity):
 
         # ghost behavior state
         self.state = "normal"
-        self.move_delay = 0.30   # ghost moves every 0.25 sec → slower
+        self.normal_move_delay = 0.30  # normal speed
+        self.vulnerable_move_delay = 1.00  # slower when vulnerable
+        self.move_delay = self.normal_move_delay        
         self.time_since_move = 0
         self.vulnerable_timer = 0.0
 
@@ -120,7 +122,27 @@ class Ghost(Entity):
         # Filter out reverse IF there is any alternative
         if reverse in valid_moves and len(valid_moves) > 1:
             valid_moves.remove(reverse)
-
+        
+        # --- RUN AWAY from Pacman if vulnerable ---
+        if self.state == "vulnerable":
+            # Calculate distance from each valid move to Pacman
+            px, py = pacman_pos
+            move_distances = []
+            for dx, dy in valid_moves:
+                nx, ny = self.tx + dx, self.ty + dy
+                dist = abs(nx - px) + abs(ny - py)  # Manhattan distance
+                move_distances.append(((dx, dy), dist))
+            
+            # Choose move that MAXIMIZES distance from Pacman
+            move_distances.sort(key=lambda x: x[1], reverse=True)
+            best_moves = [m for m in move_distances if m[1] == move_distances[0][1]]
+            dx, dy = random.choice(best_moves)[0]
+            
+            # Save last move for next frame
+            self._last_dx = dx
+            self._last_dy = dy
+            return dx, dy
+        
         # Choose random valid move
         dx, dy = random.choice(valid_moves)
 
@@ -130,4 +152,3 @@ class Ghost(Entity):
         self._last_dy = dy
 
         return dx, dy
-
