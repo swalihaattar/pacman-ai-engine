@@ -2,7 +2,7 @@
 
 ## **Overview**
 
-**Objective:** A fully functional Pac-Man game featuring an autonomous AI system capable of navigating mazes, avoiding threats, and optimizing pellet collection using rule-based logic, feature extraction, and BFS pathfinding.
+A fully functional Pac-Man game featuring an autonomous AI system capable of navigating mazes, avoiding threats, and optimizing pellet collection using rule-based logic, feature extraction, and BFS pathfinding.
 
 ---
 
